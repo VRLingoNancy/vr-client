@@ -16,10 +16,11 @@ public class VRMenuToggle : MonoBehaviour
 
             if (menu.activeSelf) {
                 Vector3 forward = playerCamera.forward;
+                forward.y = 0f;
                 forward.Normalize();
 
-                menu.transform.position = playerCamera.position + forward * distance;
-                menu.transform.rotation = Quaternion.LookRotation(forward);
+                menu.transform.position = playerCamera.position + forward;
+                menu.transform.rotation = Quaternion.LookRotation(forward, Vector3.up);
             }
         }
     }
