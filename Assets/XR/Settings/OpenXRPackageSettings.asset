@@ -143,11 +143,7 @@ MonoBehaviour:
   m_spacewarpMotionVectorTextureFormat: 0
   m_optimizeBufferDiscards: 0
   m_symmetricProjection: 0
-  m_optimizeMultiviewRenderRegions: 0
-  m_multiviewRenderRegionsOptimizationMode: 0
-  m_hasMigratedMultiviewRenderRegionSetting: 1
   m_foveatedRenderingApi: 0
-  m_useOpenXRPredictedTime: 0
 --- !u!114 &-5311418557368314572
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -333,11 +329,7 @@ MonoBehaviour:
   m_spacewarpMotionVectorTextureFormat: 0
   m_optimizeBufferDiscards: 0
   m_symmetricProjection: 0
-  m_optimizeMultiviewRenderRegions: 0
-  m_multiviewRenderRegionsOptimizationMode: 0
-  m_hasMigratedMultiviewRenderRegionSetting: 1
   m_foveatedRenderingApi: 0
-  m_useOpenXRPredictedTime: 0
 --- !u!114 &-3225394163401567679
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -400,7 +392,6 @@ MonoBehaviour:
   company: Unity
   priority: 0
   required: 0
-  m_UseRightHandedNDC: 0
 --- !u!114 &-2381477133030584647
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -597,7 +588,6 @@ MonoBehaviour:
   m_Name: Android
   m_EditorClassIdentifier: 
   features:
-  - {fileID: -2899360400105984877}
   - {fileID: 6886245988355559344}
   - {fileID: 6746228182035495572}
   - {fileID: 8877639857907081683}
@@ -626,11 +616,7 @@ MonoBehaviour:
   m_spacewarpMotionVectorTextureFormat: 0
   m_optimizeBufferDiscards: 0
   m_symmetricProjection: 0
-  m_optimizeMultiviewRenderRegions: 0
-  m_multiviewRenderRegionsOptimizationMode: 0
-  m_hasMigratedMultiviewRenderRegionSetting: 1
   m_foveatedRenderingApi: 0
-  m_useOpenXRPredictedTime: 0
 --- !u!114 &-5901582635306253
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -663,7 +649,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f0ebc320a151d3408ea1e9fce54d40e, type: 3}
   m_Name: OpenXRPackageSettings
   m_EditorClassIdentifier: 
-  Keys: 01000000070000000400000019000000240000000e000000
+  Keys: 01000000070000000400000019000000240000000e0000000d000000
   Values:
   - {fileID: 2707690468414890467}
   - {fileID: -96246732860517567}
@@ -671,6 +657,7 @@ MonoBehaviour:
   - {fileID: -3278761436915834721}
   - {fileID: 8636812807383125148}
   - {fileID: 468850230583269384}
+  - {fileID: 7531225607587632176}
 --- !u!114 &147228438309725162
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -732,11 +719,7 @@ MonoBehaviour:
   m_spacewarpMotionVectorTextureFormat: 0
   m_optimizeBufferDiscards: 0
   m_symmetricProjection: 0
-  m_optimizeMultiviewRenderRegions: 0
-  m_multiviewRenderRegionsOptimizationMode: 0
-  m_hasMigratedMultiviewRenderRegionSetting: 1
   m_foveatedRenderingApi: 0
-  m_useOpenXRPredictedTime: 0
 --- !u!114 &1070505300935040877
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -880,11 +863,7 @@ MonoBehaviour:
   m_spacewarpMotionVectorTextureFormat: 0
   m_optimizeBufferDiscards: 0
   m_symmetricProjection: 0
-  m_optimizeMultiviewRenderRegions: 0
-  m_multiviewRenderRegionsOptimizationMode: 0
-  m_hasMigratedMultiviewRenderRegionSetting: 1
   m_foveatedRenderingApi: 0
-  m_useOpenXRPredictedTime: 0
 --- !u!114 &3150671951373486854
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1091,8 +1070,6 @@ MonoBehaviour:
   lateLatchingMode: 0
   lateLatchingDebug: 0
   optimizeMultiviewRenderRegions: 0
-  multiviewRenderRegionsOptimizationMode: 0
-  m_hasMigratedMultiviewRenderRegions: 1
   spacewarpMotionVectorTextureFormat: 0
 --- !u!114 &5185910735314338884
 MonoBehaviour:
@@ -1156,6 +1133,26 @@ MonoBehaviour:
   required: 0
   cacheSize: 1048576
   perThreadCacheSize: 51200
+--- !u!114 &6262205791728775017
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b213d3e3c7f3109449eb46a4c8ee42f0, type: 3}
+  m_Name: XrPerformanceSettingsFeature WebGL
+  m_EditorClassIdentifier: 
+  m_enabled: 0
+  nameUi: XR Performance Settings
+  version: 1.0.0
+  featureIdInternal: com.unity.openxr.feature.extension.performance_settings
+  openxrExtensionStrings: XR_EXT_performance_settings
+  company: Unity
+  priority: 0
+  required: 0
 --- !u!114 &6413359822837567670
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1342,6 +1339,30 @@ MonoBehaviour:
   company: Unity
   priority: 0
   required: 0
+--- !u!114 &7531225607587632176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5a1f07dc5afe854f9f12a4194aca3fb, type: 3}
+  m_Name: WebGL
+  m_EditorClassIdentifier: 
+  features:
+  - {fileID: 6262205791728775017}
+  m_renderMode: 1
+  m_latencyOptimization: 0
+  m_autoColorSubmissionMode: 1
+  m_colorSubmissionModes:
+    m_List: 00000000
+  m_depthSubmissionMode: 0
+  m_spacewarpMotionVectorTextureFormat: 0
+  m_optimizeBufferDiscards: 0
+  m_symmetricProjection: 0
+  m_foveatedRenderingApi: 0
 --- !u!114 &7547060763672968591
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1502,11 +1523,7 @@ MonoBehaviour:
   m_spacewarpMotionVectorTextureFormat: 0
   m_optimizeBufferDiscards: 0
   m_symmetricProjection: 0
-  m_optimizeMultiviewRenderRegions: 0
-  m_multiviewRenderRegionsOptimizationMode: 0
-  m_hasMigratedMultiviewRenderRegionSetting: 1
   m_foveatedRenderingApi: 0
-  m_useOpenXRPredictedTime: 0
 --- !u!114 &8759366741247560425
 MonoBehaviour:
   m_ObjectHideFlags: 0
