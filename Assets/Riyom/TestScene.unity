@@ -616,6 +616,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 613078446651681862, guid: 905c0335d785e8b4abb82115f6916e28, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 613078446651681862, guid: 905c0335d785e8b4abb82115f6916e28, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4056714544582817746, guid: 905c0335d785e8b4abb82115f6916e28, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4056714544582817746, guid: 905c0335d785e8b4abb82115f6916e28, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4056714544582817746, guid: 905c0335d785e8b4abb82115f6916e28, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5283985479642641673, guid: 905c0335d785e8b4abb82115f6916e28, type: 3}
       propertyPath: m_Name
       value: Player
