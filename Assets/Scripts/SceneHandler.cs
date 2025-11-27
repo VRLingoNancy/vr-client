@@ -7,6 +7,11 @@ public class SceneHandler : MonoBehaviour
     public CanvasGroup fadeCanvas;
     public float fadeDuration = 1f;
 
+    public void LoadScene(string sceneName)
+    {
+        SceneManager.LoadScene(sceneName);
+    }
+
     public void LoadSceneWithFade(string sceneName)
     {
         StartCoroutine(FadeAndLoad(sceneName));

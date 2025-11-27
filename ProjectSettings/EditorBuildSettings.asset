@@ -6,7 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Riyom/TestScene.unity
+    path: Assets/Scenes/TestScene.unity
     guid: 61ffd69afadeb614f8549959caf119a5
   - enabled: 1
     path: Assets/Scenes/MainScene.unity

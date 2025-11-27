@@ -3164,7 +3164,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 4931407600873525285}
         m_TargetAssemblyTypeName: SceneHandler, Assembly-CSharp
-        m_MethodName: LoadSceneWithFade
+        m_MethodName: LoadScene
         m_Mode: 5
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -3221,65 +3221,6 @@ Transform:
   - {fileID: 6185669518105174866}
   m_Father: {fileID: 2851267402494278709}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &5381044988151595832
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5970028994393184650}
-  - component: {fileID: 1512052661315066266}
-  m_Layer: 5
-  m_Name: MenuManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5970028994393184650
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5381044988151595832}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 1
-  m_Children: []
-  m_Father: {fileID: 5921892318809952325}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1512052661315066266
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5381044988151595832}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d23c65fefcc0f0b4b92b0bec780a5ebf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::VRMenuToggle
-  menu: {fileID: 5519976238322528476}
-  playerCamera: {fileID: 0}
-  distance: 2
-  toggleButton:
-    m_UseReference: 1
-    m_Action:
-      m_Name: Toggle Button
-      m_Type: 0
-      m_ExpectedControlType: 
-      m_Id: b2461deb-9d66-466d-98fa-2e660e1761c3
-      m_Processors: 
-      m_Interactions: 
-      m_SingletonActionBindings: []
-      m_Flags: 0
-    m_Reference: {fileID: 7022915374704533488, guid: 94ec5dbb02b47e54caea06e0e51a57f1, type: 3}
 --- !u!1 &5519976238322528476
 GameObject:
   m_ObjectHideFlags: 0
@@ -4056,6 +3997,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5921892318809952325}
+  - component: {fileID: 576366894397284092}
   m_Layer: 5
   m_Name: PlayerMenu
   m_TagString: Untagged
@@ -4076,10 +4018,36 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
-  - {fileID: 5970028994393184650}
   - {fileID: 1663961744108787533}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &576366894397284092
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6471194618354278177}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d23c65fefcc0f0b4b92b0bec780a5ebf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VRMenuToggle
+  menu: {fileID: 5519976238322528476}
+  playerCamera: {fileID: 0}
+  distance: 2
+  toggleButton:
+    m_UseReference: 1
+    m_Action:
+      m_Name: Toggle Button
+      m_Type: 0
+      m_ExpectedControlType: 
+      m_Id: b2461deb-9d66-466d-98fa-2e660e1761c3
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 7022915374704533488, guid: 94ec5dbb02b47e54caea06e0e51a57f1, type: 3}
 --- !u!1 &6503421706334050707
 GameObject:
   m_ObjectHideFlags: 0

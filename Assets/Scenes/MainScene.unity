@@ -646,6 +646,22 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2584832239784703131, guid: 905c0335d785e8b4abb82115f6916e28, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_StringArgument
+      value: TestScene
+      objectReference: {fileID: 0}
+    - target: {fileID: 3017386092537447826, guid: 905c0335d785e8b4abb82115f6916e28, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3411807517008614392, guid: 905c0335d785e8b4abb82115f6916e28, type: 3}
+      propertyPath: m_text
+      value: Scene test
+      objectReference: {fileID: 0}
+    - target: {fileID: 3452082122532435574, guid: 905c0335d785e8b4abb82115f6916e28, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4056714544582817746, guid: 905c0335d785e8b4abb82115f6916e28, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
