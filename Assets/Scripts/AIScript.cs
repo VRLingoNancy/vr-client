@@ -117,7 +117,7 @@ public class AIScript : MonoBehaviour
 
         if (string.IsNullOrWhiteSpace(transcript))
         {
-            //subtitleLabel?.SetText("❌ Échec de la transcription.");
+            subtitleLabel?.SetText("❌ Échec de la transcription.");
             yield break;
         }
 

@@ -3052,7 +3052,6 @@ GameObject:
   - component: {fileID: 843050384036435094}
   - component: {fileID: 3189778249032180752}
   - component: {fileID: 5087421286665257429}
-  - component: {fileID: 4931407600873525285}
   m_Layer: 5
   m_Name: To main menu
   m_TagString: Untagged
@@ -3162,9 +3161,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 4931407600873525285}
+      - m_Target: {fileID: 8395476178207770762}
         m_TargetAssemblyTypeName: SceneHandler, Assembly-CSharp
-        m_MethodName: LoadScene
+        m_MethodName: LoadSceneWithFade
         m_Mode: 5
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -3174,20 +3173,6 @@ MonoBehaviour:
           m_StringArgument: MainScene
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &4931407600873525285
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5029465547168961320}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d3c6fe47acd2b3b4fbc684ee9b5900ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  fadeCanvas: {fileID: 0}
-  fadeDuration: 1
 --- !u!1 &5362668446750323871
 GameObject:
   m_ObjectHideFlags: 0
@@ -3234,7 +3219,7 @@ GameObject:
   - component: {fileID: 3312330967969297019}
   - component: {fileID: 2733944370610906085}
   m_Layer: 5
-  m_Name: Canvas
+  m_Name: MenuCanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3998,6 +3983,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5921892318809952325}
   - component: {fileID: 576366894397284092}
+  - component: {fileID: 8395476178207770762}
   m_Layer: 5
   m_Name: PlayerMenu
   m_TagString: Untagged
@@ -4048,6 +4034,20 @@ MonoBehaviour:
       m_SingletonActionBindings: []
       m_Flags: 0
     m_Reference: {fileID: 7022915374704533488, guid: 94ec5dbb02b47e54caea06e0e51a57f1, type: 3}
+--- !u!114 &8395476178207770762
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6471194618354278177}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3c6fe47acd2b3b4fbc684ee9b5900ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fadeCanvas: {fileID: 0}
+  fadeDuration: 1
 --- !u!1 &6503421706334050707
 GameObject:
   m_ObjectHideFlags: 0
