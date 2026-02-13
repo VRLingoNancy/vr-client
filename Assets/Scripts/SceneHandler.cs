@@ -28,4 +28,10 @@ public class SceneHandler : MonoBehaviour
         }
         SceneManager.LoadScene(sceneName);
     }
+
+    public void Login()
+    {
+        const string login = "test@vrlingo.local";
+        const string pass = "test1234";
+    }
 }
