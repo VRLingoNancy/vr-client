@@ -15,7 +15,7 @@ using UnityEngine.InputSystem;
 public class AIScript : MonoBehaviour
 {
     [Header("Backend")]
-    [SerializeField] private string backendBaseUrl = "http://10.169.180.230:3000";
+    [SerializeField] private string backendBaseUrl = "http://localhost:3000";
     [SerializeField] private string userId = "demo-user";
     [SerializeField] private string sessionId = "unity-session";
     [SerializeField] private string locale = "fr-FR";
@@ -45,6 +45,15 @@ public class AIScript : MonoBehaviour
             avatarAudioSource = GetComponent<AudioSource>();
         }
 
+        if (string.IsNullOrWhiteSpace(backendBaseUrl) && !string.IsNullOrWhiteSpace(AuthState.httpUrl))
+        {
+            backendBaseUrl = AuthState.httpUrl;
+        }
+        else if (!string.IsNullOrWhiteSpace(AuthState.httpUrl) && backendBaseUrl.Contains("localhost"))
+        {
+            backendBaseUrl = AuthState.httpUrl;
+        }
+
         if (Microphone.devices.Length > 0)
         {
             microphoneDevice = Microphone.devices[0];
@@ -63,7 +72,7 @@ public class AIScript : MonoBehaviour
         {
             StartRecording();
         }
-        else if (pushToTalkKey.action.WasPressedThisFrame() && isRecording)
+        else if (pushToTalkKey.action.WasReleasedThisFrame() && isRecording)
         {
             StopRecordingAndProcess();
         }
@@ -212,6 +221,10 @@ public class AIScript : MonoBehaviour
         request.uploadHandler = new UploadHandlerRaw(payloadBytes);
         request.downloadHandler = new DownloadHandlerBuffer();
         request.SetRequestHeader("Content-Type", "application/json");
+        if (!string.IsNullOrWhiteSpace(AuthState.AccessToken))
+        {
+            request.SetRequestHeader("Authorization", $"Bearer {AuthState.AccessToken}");
+        }
 
         yield return request.SendWebRequest();
 
@@ -231,6 +244,10 @@ public class AIScript : MonoBehaviour
         request.uploadHandler = new UploadHandlerRaw(payloadBytes);
         request.downloadHandler = new DownloadHandlerBuffer();
         request.SetRequestHeader("Content-Type", "application/json");
+        if (!string.IsNullOrWhiteSpace(AuthState.AccessToken))
+        {
+            request.SetRequestHeader("Authorization", $"Bearer {AuthState.AccessToken}");
+        }
 
         yield return request.SendWebRequest();
 
