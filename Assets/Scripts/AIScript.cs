@@ -2,18 +2,25 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Minimal Unity behaviour that connects the avatar to the Fastify backend (conversation + STT + TTS).
-/// Drop this on the avatar GameObject, wire an AudioSource and optional subtitle label, then hold the
-/// push-to-talk key (default T) to record. On release, the snippet is transcribed, answered, and voiced.
+/// Avatar speech controller with A/B backend mode switch:
+/// - REST pipeline: STT -> Conversation -> TTS
+/// - Realtime pipeline: direct WebSocket to /api/realtime/session
 /// </summary>
 public class AIScript : MonoBehaviour
 {
+    private enum ConversationMode
+    {
+        RestSttChatTts = 0,
+        RealtimeAudioModel = 1,
+    }
+
     [Header("Backend")]
     [SerializeField] private string backendBaseUrl = "http://localhost:3000";
     [SerializeField] private string userId = "demo-user";
@@ -29,10 +36,14 @@ public class AIScript : MonoBehaviour
     [SerializeField] private string talkingBoolParameter = "IsTalking";
     [SerializeField] private TMP_Text subtitleLabel;
 
+    [Header("Mode")]
+    [SerializeField] private ConversationMode conversationMode = ConversationMode.RestSttChatTts;
+    [SerializeField] private AIRealTime realtimeClient;
+
     [Header("Input Settings")]
     [SerializeField] private InputActionProperty pushToTalkKey;
     [SerializeField] private float maxRecordSeconds = 10f;
-    [SerializeField] private int microphoneSampleRate = 44100;
+    [SerializeField] private int microphoneSampleRate = 24000;
 
     private string microphoneDevice;
     private AudioClip recordingClip;
@@ -53,6 +64,16 @@ public class AIScript : MonoBehaviour
         {
             backendBaseUrl = AuthState.httpUrl;
         }
+
+        if (realtimeClient == null)
+        {
+            realtimeClient = GetComponent<AIRealTime>();
+        }
+        if (realtimeClient == null)
+        {
+            realtimeClient = FindObjectOfType<AIRealTime>();
+        }
+        realtimeClient?.SetLanguage(targetLanguage);
 
         if (Microphone.devices.Length > 0)
         {
@@ -82,8 +103,16 @@ public class AIScript : MonoBehaviour
     {
         if (string.IsNullOrWhiteSpace(prompt)) { return; }
         var trimmed = prompt.Trim();
-        subtitleLabel?.SetText($"AIScript: sending text prompt \"{trimmed}\"");
-        StartCoroutine(ConversationPipeline(prompt.Trim()));
+        subtitleLabel?.SetText($"AIScript: sending text prompt \"{trimmed}\" ({conversationMode})");
+
+        if (conversationMode == ConversationMode.RealtimeAudioModel)
+        {
+            StartCoroutine(RealtimeTextPromptPipeline(trimmed));
+        }
+        else
+        {
+            StartCoroutine(ConversationPipeline(trimmed));
+        }
     }
 
     private void StartRecording()
@@ -115,14 +144,24 @@ public class AIScript : MonoBehaviour
         cleanedClip.SetData(samples, 0);
         SetTalkingAnimation(false);
 
-        StartCoroutine(ConversationPipeline(cleanedClip));
+        if (conversationMode == ConversationMode.RealtimeAudioModel)
+        {
+            StartCoroutine(RealtimeAudioPipeline(cleanedClip));
+        }
+        else
+        {
+            StartCoroutine(ConversationPipeline(cleanedClip));
+        }
     }
 
     private IEnumerator ConversationPipeline(AudioClip clip)
     {
+        float turnStartedAt = Time.realtimeSinceStartup;
+        float sttStartedAt = Time.realtimeSinceStartup;
         string base64Audio = Convert.ToBase64String(ConvertClipToWav(clip));
         string transcript = null;
         yield return StartCoroutine(TranscribeCoroutine(base64Audio, result => transcript = result));
+        float sttMs = (Time.realtimeSinceStartup - sttStartedAt) * 1000f;
 
         if (string.IsNullOrWhiteSpace(transcript))
         {
@@ -130,12 +169,29 @@ public class AIScript : MonoBehaviour
             yield break;
         }
 
+        float chatMs = -1f;
+        float ttsMs = -1f;
         subtitleLabel?.SetText($"Vous: {transcript}");
-        yield return StartCoroutine(ConversationPipeline(transcript));
+        yield return StartCoroutine(ConversationPipeline(transcript, (chat, tts) =>
+        {
+            chatMs = chat;
+            ttsMs = tts;
+        }));
+
+        float totalMs = (Time.realtimeSinceStartup - turnStartedAt) * 1000f;
+        Debug.Log(
+            $"AIScript[REST] latency ms => STT={sttMs:F0}, CHAT={chatMs:F0}, TTS={ttsMs:F0}, TOTAL={totalMs:F0}"
+        );
     }
 
     private IEnumerator ConversationPipeline(string userMessage)
     {
+        yield return StartCoroutine(ConversationPipeline(userMessage, null));
+    }
+
+    private IEnumerator ConversationPipeline(string userMessage, Action<float, float> onMetrics)
+    {
+        float chatStartedAt = Time.realtimeSinceStartup;
         ConversationResponse response = null;
         yield return StartCoroutine(
             PostJsonCoroutine(
@@ -152,6 +208,7 @@ public class AIScript : MonoBehaviour
                 json => response = JsonUtility.FromJson<ConversationResponse>(json)
             )
         );
+        float chatMs = (Time.realtimeSinceStartup - chatStartedAt) * 1000f;
 
         if (response == null || string.IsNullOrWhiteSpace(response.reply))
         {
@@ -160,7 +217,105 @@ public class AIScript : MonoBehaviour
         }
 
         subtitleLabel?.SetText(response.reply);
+        float ttsStartedAt = Time.realtimeSinceStartup;
         yield return StartCoroutine(SpeakCoroutine(response.reply));
+        float ttsMs = (Time.realtimeSinceStartup - ttsStartedAt) * 1000f;
+
+        onMetrics?.Invoke(chatMs, ttsMs);
+        Debug.Log($"AIScript[REST] text turn latency ms => CHAT={chatMs:F0}, TTS={ttsMs:F0}");
+    }
+
+    private IEnumerator RealtimeTextPromptPipeline(string prompt)
+    {
+        if (!EnsureRealtimeClient())
+        {
+            subtitleLabel?.SetText("❌ AIRealTime manquant dans la scène.");
+            yield break;
+        }
+
+        Task<AIRealTime.RealtimeTurnResult> task = realtimeClient.SendTextTurnAsync(prompt);
+        while (!task.IsCompleted)
+        {
+            yield return null;
+        }
+
+        if (task.IsFaulted)
+        {
+            subtitleLabel?.SetText("❌ Erreur Realtime (text).");
+            Debug.LogError($"AIScript: Realtime text task faulted -> {task.Exception}");
+            yield break;
+        }
+
+        HandleRealtimeResult(task.Result, "text");
+    }
+
+    private IEnumerator RealtimeAudioPipeline(AudioClip clip)
+    {
+        if (!EnsureRealtimeClient())
+        {
+            subtitleLabel?.SetText("❌ AIRealTime manquant dans la scène.");
+            yield break;
+        }
+
+        byte[] pcm16Mono = ConvertClipToPcm16Mono(clip);
+        if (pcm16Mono.Length == 0)
+        {
+            subtitleLabel?.SetText("❌ Audio invalide pour Realtime.");
+            yield break;
+        }
+
+        Task<AIRealTime.RealtimeTurnResult> task = realtimeClient.SendAudioTurnAsync(pcm16Mono);
+        while (!task.IsCompleted)
+        {
+            yield return null;
+        }
+
+        if (task.IsFaulted)
+        {
+            subtitleLabel?.SetText("❌ Erreur Realtime (audio).");
+            Debug.LogError($"AIScript: Realtime audio task faulted -> {task.Exception}");
+            yield break;
+        }
+
+        HandleRealtimeResult(task.Result, "audio");
+    }
+
+    private void HandleRealtimeResult(AIRealTime.RealtimeTurnResult result, string mode)
+    {
+        if (result == null || !result.success)
+        {
+            string error = result?.error ?? "Tour Realtime échoué.";
+            subtitleLabel?.SetText($"❌ {error}");
+            Debug.LogError($"AIScript[Realtime:{mode}] failed -> {error}");
+            return;
+        }
+
+        string userText = string.IsNullOrWhiteSpace(result.userTranscript) ? "(transcript non reçu)" : result.userTranscript;
+        string assistantText = string.IsNullOrWhiteSpace(result.assistantText) ? "(texte assistant non reçu)" : result.assistantText;
+        subtitleLabel?.SetText($"Vous: {userText}\nIA: {assistantText}");
+
+        Debug.Log(
+            $"AIScript[Realtime:{mode}] latency ms => FIRST={result.firstResponseMs:F0}, TOTAL={result.totalResponseMs:F0}"
+        );
+    }
+
+    private bool EnsureRealtimeClient()
+    {
+        if (realtimeClient == null)
+        {
+            realtimeClient = GetComponent<AIRealTime>();
+        }
+        if (realtimeClient == null)
+        {
+            realtimeClient = FindObjectOfType<AIRealTime>();
+        }
+        if (realtimeClient == null)
+        {
+            return false;
+        }
+
+        realtimeClient.SetLanguage(targetLanguage);
+        return true;
     }
 
     private IEnumerator TranscribeCoroutine(string base64Audio, Action<string> onComplete)
@@ -299,6 +454,31 @@ public class AIScript : MonoBehaviour
         writer.Write(pcmData);
         writer.Flush();
         return memoryStream.ToArray();
+    }
+
+    private byte[] ConvertClipToPcm16Mono(AudioClip clip)
+    {
+        if (clip == null || clip.samples == 0)
+        {
+            return Array.Empty<byte>();
+        }
+
+        float[] samples = new float[clip.samples * clip.channels];
+        clip.GetData(samples, 0);
+
+        byte[] pcmData = new byte[clip.samples * 2];
+        const float rescaleFactor = 32767f;
+
+        for (int i = 0; i < clip.samples; i++)
+        {
+            float monoSample = samples[i * clip.channels];
+            short value = (short)Mathf.Clamp(monoSample * rescaleFactor, short.MinValue, short.MaxValue);
+            byte[] bytes = BitConverter.GetBytes(value);
+            pcmData[i * 2] = bytes[0];
+            pcmData[(i * 2) + 1] = bytes[1];
+        }
+
+        return pcmData;
     }
 
     private AudioClip CreateClipFromWav(byte[] wavBytes)
