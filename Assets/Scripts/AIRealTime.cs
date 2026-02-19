@@ -13,6 +13,7 @@ public class AIRealTime : MonoBehaviour
     {
         public bool success;
         public string error;
+        public string traceId;
         public string userTranscript;
         public string assistantText;
         public float firstResponseMs;
@@ -23,11 +24,13 @@ public class AIRealTime : MonoBehaviour
     [SerializeField] private string languageCode = "fr-FR";
     [SerializeField] private bool connectOnStart = true;
     [SerializeField] private float turnTimeoutSeconds = 25f;
-    [SerializeField] private bool verboseLogs;
+    [SerializeField] private bool verboseLogs = true;
 
     private WebSocket ws;
     private bool isConnecting;
     private Task connectTask;
+    private string sessionTraceId = string.Empty;
+    private string activeTurnTraceId = string.Empty;
 
     private TaskCompletionSource<RealtimeTurnResult> activeTurnCompletion;
     private float turnStartedAt;
@@ -53,8 +56,13 @@ public class AIRealTime : MonoBehaviour
         }
     }
 
-    public async Task<bool> EnsureConnectedAsync()
+    public async Task<bool> EnsureConnectedAsync(string traceId = null)
     {
+        if (!string.IsNullOrWhiteSpace(traceId))
+        {
+            sessionTraceId = traceId;
+        }
+
         if (IsConnected)
         {
             return true;
@@ -71,68 +79,112 @@ public class AIRealTime : MonoBehaviour
         return IsConnected;
     }
 
-    public async Task<RealtimeTurnResult> SendTextTurnAsync(string text)
+    public async Task<RealtimeTurnResult> SendTextTurnAsync(
+        string text,
+        string traceId = null
+    )
     {
+        string turnTraceId = string.IsNullOrWhiteSpace(traceId)
+            ? GenerateTraceId("rt-text")
+            : traceId.Trim();
+
         if (string.IsNullOrWhiteSpace(text))
         {
-            return FailResult("Prompt texte vide.");
+            return FailResult("Prompt texte vide.", turnTraceId);
         }
 
-        if (!await EnsureConnectedAsync())
+        if (!await EnsureConnectedAsync(turnTraceId))
         {
-            return FailResult("WebSocket non connecté.");
+            return FailResult("WebSocket non connecté.", turnTraceId);
         }
 
-        BeginTurn();
+        BeginTurn(turnTraceId);
+        if (verboseLogs)
+        {
+            Debug.Log(
+                $"AIRealTime[{turnTraceId}] send text turn ({text.Length} chars)"
+            );
+        }
 
         try
         {
             string escapedText = EscapeJson(text.Trim());
             await ws.SendText(
-                $"{{\"type\":\"conversation.item.create\",\"item\":{{\"type\":\"message\",\"role\":\"user\",\"content\":[{{\"type\":\"input_text\",\"text\":\"{escapedText}\"}}]}}}}"
+                $"{{\"event_id\":\"{EscapeJson(turnTraceId)}-input\",\"type\":\"conversation.item.create\",\"item\":{{\"type\":\"message\",\"role\":\"user\",\"content\":[{{\"type\":\"input_text\",\"text\":\"{escapedText}\"}}]}}}}"
             );
-            await ws.SendText("{\"type\":\"response.create\"}");
+            await ws.SendText(
+                $"{{\"event_id\":\"{EscapeJson(turnTraceId)}-response\",\"type\":\"response.create\"}}"
+            );
         }
         catch (Exception ex)
         {
-            CompleteTurn(FailResult($"Erreur envoi WS: {ex.Message}"));
+            CompleteTurn(FailResult($"Erreur envoi WS: {ex.Message}", turnTraceId));
         }
 
         return await WaitForTurnResultAsync();
     }
 
-    public async Task<RealtimeTurnResult> SendAudioTurnAsync(byte[] pcm16MonoAudio)
+    public async Task<RealtimeTurnResult> SendAudioTurnAsync(
+        byte[] pcm16MonoAudio,
+        string traceId = null
+    )
     {
+        string turnTraceId = string.IsNullOrWhiteSpace(traceId)
+            ? GenerateTraceId("rt-audio")
+            : traceId.Trim();
+
         if (pcm16MonoAudio == null || pcm16MonoAudio.Length == 0)
         {
-            return FailResult("Audio vide.");
+            return FailResult("Audio vide.", turnTraceId);
         }
 
-        if (!await EnsureConnectedAsync())
+        if (!await EnsureConnectedAsync(turnTraceId))
         {
-            return FailResult("WebSocket non connecté.");
+            return FailResult("WebSocket non connecté.", turnTraceId);
         }
 
-        BeginTurn();
+        BeginTurn(turnTraceId);
+        if (verboseLogs)
+        {
+            Debug.Log(
+                $"AIRealTime[{turnTraceId}] send audio turn ({pcm16MonoAudio.Length} bytes PCM16)"
+            );
+        }
 
         try
         {
             const int chunkSize = 12000;
-            for (int offset = 0; offset < pcm16MonoAudio.Length; offset += chunkSize)
+            int chunkIndex = 0;
+            for (
+                int offset = 0;
+                offset < pcm16MonoAudio.Length;
+                offset += chunkSize
+            )
             {
                 int length = Mathf.Min(chunkSize, pcm16MonoAudio.Length - offset);
-                string chunkBase64 = Convert.ToBase64String(pcm16MonoAudio, offset, length);
-                await ws.SendText(
-                    $"{{\"type\":\"input_audio_buffer.append\",\"audio\":\"{chunkBase64}\"}}"
+                string chunkBase64 = Convert.ToBase64String(
+                    pcm16MonoAudio,
+                    offset,
+                    length
                 );
+                await ws.SendText(
+                    $"{{\"event_id\":\"{EscapeJson(turnTraceId)}-chunk-{chunkIndex}\",\"type\":\"input_audio_buffer.append\",\"audio\":\"{chunkBase64}\"}}"
+                );
+                chunkIndex++;
             }
 
-            await ws.SendText("{\"type\":\"input_audio_buffer.commit\"}");
-            await ws.SendText("{\"type\":\"response.create\"}");
+            await ws.SendText(
+                $"{{\"event_id\":\"{EscapeJson(turnTraceId)}-commit\",\"type\":\"input_audio_buffer.commit\"}}"
+            );
+            await ws.SendText(
+                $"{{\"event_id\":\"{EscapeJson(turnTraceId)}-response\",\"type\":\"response.create\"}}"
+            );
         }
         catch (Exception ex)
         {
-            CompleteTurn(FailResult($"Erreur envoi audio WS: {ex.Message}"));
+            CompleteTurn(
+                FailResult($"Erreur envoi audio WS: {ex.Message}", turnTraceId)
+            );
         }
 
         return await WaitForTurnResultAsync();
@@ -144,18 +196,29 @@ public class AIRealTime : MonoBehaviour
 
         try
         {
-            for (int i = 0; i < 30 && string.IsNullOrWhiteSpace(AuthState.AccessToken); i++)
+            for (
+                int i = 0;
+                i < 30 && string.IsNullOrWhiteSpace(AuthState.AccessToken);
+                i++
+            )
             {
                 await Task.Delay(100);
             }
 
-            string url = $"{AuthState.wsUrl}/api/realtime/session?lang={Uri.EscapeDataString(languageCode)}";
+            if (string.IsNullOrWhiteSpace(sessionTraceId))
+            {
+                sessionTraceId = GenerateTraceId("rt-session");
+            }
+
+            string url =
+                $"{AuthState.wsUrl}/api/realtime/session?lang={Uri.EscapeDataString(languageCode)}&traceId={Uri.EscapeDataString(sessionTraceId)}";
 
             if (!string.IsNullOrWhiteSpace(AuthState.AccessToken))
             {
                 var headers = new Dictionary<string, string>
                 {
-                    { "Authorization", $"Bearer {AuthState.AccessToken}" }
+                    { "Authorization", $"Bearer {AuthState.AccessToken}" },
+                    { "X-Trace-Id", sessionTraceId },
                 };
                 ws = new WebSocket(url, headers);
             }
@@ -166,7 +229,7 @@ public class AIRealTime : MonoBehaviour
 
             ws.OnOpen += () =>
             {
-                Debug.Log($"AIRealTime: WS connected -> {url}");
+                Debug.Log($"AIRealTime[{sessionTraceId}] WS connected -> {url}");
             };
 
             ws.OnMessage += OnWebSocketMessage;
@@ -174,7 +237,7 @@ public class AIRealTime : MonoBehaviour
         }
         catch (Exception ex)
         {
-            Debug.LogError($"AIRealTime: Connection failed -> {ex.Message}");
+            Debug.LogError($"AIRealTime[{sessionTraceId}] connect failed -> {ex.Message}");
         }
         finally
         {
@@ -186,7 +249,7 @@ public class AIRealTime : MonoBehaviour
     {
         if (activeTurnCompletion == null)
         {
-            return FailResult("Aucun tour actif.");
+            return FailResult("Aucun tour actif.", activeTurnTraceId);
         }
 
         Task timeoutTask = Task.Delay(TimeSpan.FromSeconds(turnTimeoutSeconds));
@@ -194,17 +257,18 @@ public class AIRealTime : MonoBehaviour
 
         if (completed == timeoutTask)
         {
-            CompleteTurn(FailResult("Timeout Realtime."));
+            CompleteTurn(FailResult("Timeout Realtime.", activeTurnTraceId));
         }
 
         return await activeTurnCompletion.Task;
     }
 
-    private void BeginTurn()
+    private void BeginTurn(string turnTraceId)
     {
         activeTurnCompletion = new TaskCompletionSource<RealtimeTurnResult>();
         turnStartedAt = Time.realtimeSinceStartup;
         firstResponseAt = -1f;
+        activeTurnTraceId = turnTraceId;
         latestUserTranscript = string.Empty;
         latestAssistantText = string.Empty;
     }
@@ -224,7 +288,7 @@ public class AIRealTime : MonoBehaviour
         string message = Encoding.UTF8.GetString(bytes);
         if (verboseLogs)
         {
-            Debug.Log($"AIRealTime <- {message}");
+            Debug.Log($"AIRealTime[{activeTurnTraceId}] <- {message}");
         }
 
         if (activeTurnCompletion == null || activeTurnCompletion.Task.IsCompleted)
@@ -251,7 +315,10 @@ public class AIRealTime : MonoBehaviour
                 latestUserTranscript = transcript;
             }
         }
-        else if (eventType == "response.audio_transcript.delta" || eventType == "response.text.delta")
+        else if (
+            eventType == "response.audio_transcript.delta" ||
+            eventType == "response.text.delta"
+        )
         {
             string delta = ExtractStringField(message, "delta");
             if (!string.IsNullOrWhiteSpace(delta))
@@ -262,30 +329,39 @@ public class AIRealTime : MonoBehaviour
         else if (eventType == "error")
         {
             string err = ExtractStringField(message, "message");
-            CompleteTurn(FailResult(string.IsNullOrWhiteSpace(err) ? "Erreur Realtime." : err));
+            CompleteTurn(
+                FailResult(
+                    string.IsNullOrWhiteSpace(err) ? "Erreur Realtime." : err,
+                    activeTurnTraceId
+                )
+            );
         }
         else if (eventType == "response.done")
         {
             float now = Time.realtimeSinceStartup;
-            float firstMs = firstResponseAt < 0f ? -1f : (firstResponseAt - turnStartedAt) * 1000f;
+            float firstMs =
+                firstResponseAt < 0f ? -1f : (firstResponseAt - turnStartedAt) * 1000f;
             float totalMs = (now - turnStartedAt) * 1000f;
 
-            CompleteTurn(new RealtimeTurnResult
-            {
-                success = true,
-                firstResponseMs = firstMs,
-                totalResponseMs = totalMs,
-                userTranscript = latestUserTranscript,
-                assistantText = latestAssistantText,
-            });
+            CompleteTurn(
+                new RealtimeTurnResult
+                {
+                    success = true,
+                    traceId = activeTurnTraceId,
+                    firstResponseMs = firstMs,
+                    totalResponseMs = totalMs,
+                    userTranscript = latestUserTranscript,
+                    assistantText = latestAssistantText,
+                }
+            );
         }
     }
 
     private static bool IsFirstResponseEvent(string eventType)
     {
-        return eventType == "response.audio.delta"
-            || eventType == "response.audio_transcript.delta"
-            || eventType == "response.text.delta";
+        return eventType == "response.audio.delta" ||
+            eventType == "response.audio_transcript.delta" ||
+            eventType == "response.text.delta";
     }
 
     private static string EscapeJson(string raw)
@@ -305,7 +381,8 @@ public class AIRealTime : MonoBehaviour
             return string.Empty;
         }
 
-        string pattern = $"\"{Regex.Escape(fieldName)}\"\\s*:\\s*\"(?<value>(?:\\\\.|[^\"])*)\"";
+        string pattern =
+            $"\"{Regex.Escape(fieldName)}\"\\s*:\\s*\"(?<value>(?:\\\\.|[^\"])*)\"";
         Match match = Regex.Match(json, pattern);
         if (!match.Success)
         {
@@ -316,17 +393,24 @@ public class AIRealTime : MonoBehaviour
         return Regex.Unescape(encoded);
     }
 
-    private static RealtimeTurnResult FailResult(string error)
+    private static RealtimeTurnResult FailResult(string error, string traceId)
     {
         return new RealtimeTurnResult
         {
             success = false,
             error = error,
+            traceId = traceId,
             firstResponseMs = -1f,
             totalResponseMs = -1f,
             userTranscript = string.Empty,
             assistantText = string.Empty,
         };
+    }
+
+    private static string GenerateTraceId(string prefix)
+    {
+        string compact = Guid.NewGuid().ToString("N");
+        return $"{prefix}-{compact.Substring(0, 8)}";
     }
 
     private void Update()
