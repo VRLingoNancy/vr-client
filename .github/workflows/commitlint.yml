@@ -1,0 +1,52 @@
+name: Commitlint
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  commitlint:
+    name: Lint commit messages (Conventional Commits)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0 # Required by commitlint to access SHA of all commits
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/jod # 22.x "Jod"
+          cache: 'npm'
+          cache-dependency-path: .github/release/package-lock.json
+
+      - name: Install commitlint
+        working-directory: .github/release/
+        run: npm clean-install --engine-strict
+
+      # Case PUSH: commitlint all pushed commits (before..head)
+      - name: Validate pushed commits with commitlint
+        if: ${{ github.event_name != 'pull_request' }}
+        working-directory: .github/release/
+        run: |
+          npx --no-install commitlint --verbose \
+            --from "${{ github.event.before }}" \
+            --to   "${{ github.sha }}"
+
+      # Case PR: commitlint all commits introduced by the PR (base..head)
+      - name: Validate PR commits with commitlint
+        if: ${{ github.event_name == 'pull_request' }}
+        working-directory: .github/release/
+        run: |
+          npx --no-install commitlint --verbose \
+            --from "${{ github.event.pull_request.base.sha }}" \
+            --to   "${{ github.event.pull_request.head.sha }}"
