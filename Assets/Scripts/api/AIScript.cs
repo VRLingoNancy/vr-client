@@ -476,11 +476,11 @@ public class AIScript : MonoBehaviour
             )
         );
 
-        if (spokenClip == null)
-        {
-            LogWarn(traceId, "TTS returned no playable clip.");
-            return;
-        }
+        // if (spokenClip == null)
+        // {
+        //     LogWarn(traceId, "TTS returned no playable clip.");
+        //     return;
+        // }
 
         if (avatarAudioSource != null)
         {

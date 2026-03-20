@@ -299,7 +299,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5247582467719690236}
-  - component: {fileID: 8935844413763043543}
+  - component: {fileID: 8444721915013911581}
   m_Layer: 0
   m_Name: AIScript
   m_TagString: Untagged
@@ -322,7 +322,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 8598537846773103723}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8935844413763043543
+--- !u!114 &8444721915013911581
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -331,34 +331,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 3844276732351613436}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 01a0709c6b5909540bdd442ff01ad912, type: 3}
+  m_Script: {fileID: 11500000, guid: 96b1046fb04489149a6b7bffbf03b102, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  backendBaseUrl: http://localhost:3100
-  userId: demo-user
-  sessionId: unity-session
-  locale: fr-FR
-  targetLanguage: fr-FR
-  proficiencyLevel: A2
-  ttsVoice: alloy
-  avatarAudioSource: {fileID: 3375017654895238975}
-  avatarAnimator: {fileID: 4913238859857401525}
-  talkingBoolParameter: IsTalking
-  subtitleLabel: {fileID: 1467863617151168329}
-  pushToTalkKey:
-    m_UseReference: 1
-    m_Action:
-      m_Name: Push To Talk Key
-      m_Type: 0
-      m_ExpectedControlType: 
-      m_Id: c1f8a79d-9f65-43ef-bc4f-4863bfad65e7
-      m_Processors: 
-      m_Interactions: 
-      m_SingletonActionBindings: []
-      m_Flags: 0
-    m_Reference: {fileID: 2148146367743806481, guid: 94ec5dbb02b47e54caea06e0e51a57f1, type: 3}
-  maxRecordSeconds: 10
-  microphoneSampleRate: 44100
+  m_EditorClassIdentifier: Assembly-CSharp::VRLingoClient
 --- !u!1 &5086774448430199994
 GameObject:
   m_ObjectHideFlags: 0
@@ -631,10 +606,5 @@ PrefabInstance:
 --- !u!4 &895861901920791321 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3833715676058777156, guid: e792b5f59bf315845ab4fbb393f59b18, type: 3}
-  m_PrefabInstance: {fileID: 4132797849142238557}
-  m_PrefabAsset: {fileID: 0}
---- !u!95 &4913238859857401525 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 9040396849666395112, guid: e792b5f59bf315845ab4fbb393f59b18, type: 3}
   m_PrefabInstance: {fileID: 4132797849142238557}
   m_PrefabAsset: {fileID: 0}
