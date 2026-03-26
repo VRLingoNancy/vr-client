@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Net.WebSockets;
 using System.Security.Cryptography;
+//using Newtonsoft.Json;
 
 public class VRLingoClient : MonoBehaviour
 {
@@ -45,6 +46,7 @@ public class VRLingoClient : MonoBehaviour
         Debug.Log("WebSocket connecté");
 
         ReceiveLoop();
+        SendAudioLoop();
     }
 
     async void ReceiveLoop()
@@ -65,7 +67,16 @@ public class VRLingoClient : MonoBehaviour
     {
         try
         {
+            Debug.Log("RAW WS: " + data);
+
             ServerEvent evt = JsonUtility.FromJson<ServerEvent>(data);
+            //ServerEvent evt = JsonConvert.DeserializeObject<ServerEvent>(data);
+
+            if (evt == null || string.IsNullOrEmpty(evt.type))
+            {
+                Debug.LogWarning("Message invalide ou non parsé: " + data);
+                return;
+            }
 
             if (evt.type == "response.audio.delta")
             {
@@ -98,9 +109,24 @@ public class VRLingoClient : MonoBehaviour
         }
     }
 
-    public async void SendAudio(byte[] pcm)
+    async void SendAudioLoop()
     {
-        if (isAiSpeaking) return;
+        while (ws != null && ws.State == WebSocketState.Open)
+        {
+            if (!isAiSpeaking)
+            {
+                byte[] fakeAudio = GenerateFakeAudio(); // temporaire
+
+                await SendAudio(fakeAudio);
+            }
+
+            await Task.Delay(50); // ~20 FPS audio
+        }
+    }
+
+    public async Task SendAudio(byte[] pcm)
+    {
+        if (isAiSpeaking || ws == null || ws.State != WebSocketState.Open) return;
 
         string base64 = Convert.ToBase64String(pcm);
 
@@ -120,6 +146,16 @@ public class VRLingoClient : MonoBehaviour
             true,
             cancellation.Token
         );
+    }
+
+    byte[] GenerateFakeAudio()
+    {
+        byte[] buffer = new byte[512];
+
+        for (int i = 0; i < buffer.Length; i++)
+            buffer[i] = (byte)UnityEngine.Random.Range(0, 255);
+
+        return buffer;
     }
 
     [Serializable]
