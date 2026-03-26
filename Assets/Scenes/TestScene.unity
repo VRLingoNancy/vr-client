@@ -491,6 +491,17 @@ MonoBehaviour:
   m_Teleporting:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2023203803 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1467863617151168329, guid: 279194abd92904d4cb7f2b7c31ef24ba, type: 3}
+  m_PrefabInstance: {fileID: 250473361802826952}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!1001 &250473361802826952
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -544,10 +555,22 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 3844276732351613436, guid: 279194abd92904d4cb7f2b7c31ef24ba, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 279194abd92904d4cb7f2b7c31ef24ba, type: 3}
+--- !u!114 &250473361802826953 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4218870001764618852, guid: 279194abd92904d4cb7f2b7c31ef24ba, type: 3}
+  m_PrefabInstance: {fileID: 250473361802826952}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10ebc39792cbb8945a78aa5c2b47afac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AudioPlayback
 --- !u!1001 &253312510795209425
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -564,6 +587,14 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1538101481944018567, guid: 905c0335d785e8b4abb82115f6916e28, type: 3}
+      propertyPath: playback
+      value: 
+      objectReference: {fileID: 250473361802826953}
+    - target: {fileID: 1538101481944018567, guid: 905c0335d785e8b4abb82115f6916e28, type: 3}
+      propertyPath: transcriptText
+      value: 
+      objectReference: {fileID: 2023203803}
     - target: {fileID: 4056714544582817746, guid: 905c0335d785e8b4abb82115f6916e28, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
