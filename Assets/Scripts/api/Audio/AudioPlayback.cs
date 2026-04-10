@@ -2,13 +2,27 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 
+[RequireComponent(typeof(AudioSource))]
 public class AudioPlayback : MonoBehaviour
 {
+    private AudioSource source;
     private readonly object lockObj = new object();
-    private Queue<float> audioQueue = new Queue<float>();
-    public AudioSource source;
-
+    private readonly List<float> buffer = new List<float>();
     public int sampleRate = 24000;
+
+    private bool isPlaying = false;
+    private int playbackPosition = 0;
+
+    void Start()
+    {
+        source = GetComponent<AudioSource>();
+        if (source == null)
+            source = gameObject.AddComponent<AudioSource>();
+
+        source.spatialBlend = 0f;
+        source.volume = 1f;
+        source.playOnAwake = false;
+    }
 
     public void PushPCM(byte[] pcm)
     {
@@ -16,19 +30,61 @@ public class AudioPlayback : MonoBehaviour
 
         lock (lockObj)
         {
-            foreach (var s in samples)
-                audioQueue.Enqueue(s);
+            buffer.AddRange(samples);
+        }
+
+        if (!isPlaying)
+            TryPlay();
+    }
+
+    void TryPlay()
+    {
+        int count;
+        lock (lockObj) { count = buffer.Count; }
+
+        if (count < sampleRate / 4) return; // wait for 250ms of audio before starting
+
+        lock (lockObj)
+        {
+            var clip = AudioClip.Create("AIResponse", buffer.Count, 1, sampleRate, false);
+            clip.SetData(buffer.ToArray(), 0);
+            source.clip = clip;
+            source.Play();
+            isPlaying = true;
+            playbackPosition = buffer.Count;
         }
     }
 
-    void OnAudioFilterRead(float[] data, int channels)
+    void Update()
     {
-        lock (lockObj)
+        if (!isPlaying || source.clip == null) return;
+
+        // Check if there's new data to append
+        int newSamples;
+        lock (lockObj) { newSamples = buffer.Count - playbackPosition; }
+
+        if (newSamples > 0)
         {
-            for (int i = 0; i < data.Length; i++)
+            lock (lockObj)
             {
-                data[i] = audioQueue.Count > 0 ? audioQueue.Dequeue() : 0;
+                var clip = AudioClip.Create("AIResponse", buffer.Count, 1, sampleRate, false);
+                clip.SetData(buffer.ToArray(), 0);
+
+                int currentSample = source.timeSamples;
+                source.clip = clip;
+                source.timeSamples = currentSample;
+                if (!source.isPlaying)
+                    source.Play();
+                playbackPosition = buffer.Count;
             }
+        }
+
+        // Reset when done playing
+        if (!source.isPlaying && isPlaying)
+        {
+            isPlaying = false;
+            lock (lockObj) { buffer.Clear(); }
+            playbackPosition = 0;
         }
     }
 
