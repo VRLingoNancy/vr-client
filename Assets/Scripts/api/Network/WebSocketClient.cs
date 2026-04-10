@@ -12,7 +12,9 @@ public class WebSocketClient
 
     public async Task Connect(string url, string token)
     {
-        ws = new WebSocket(url);
+        var separator = url.Contains("?") ? "&" : "?";
+        var urlWithToken = $"{url}{separator}token={token}";
+        ws = new WebSocket(urlWithToken);
 
         ws.OnOpen += () =>
         {
@@ -44,7 +46,10 @@ public class WebSocketClient
             Debug.Log("WS Closed");
         };
 
-        await ws.Connect();
+        _ = ws.Connect();
+
+        while (ws.State != WebSocketState.Open)
+            await Task.Delay(50);
     }
 
     public async Task Send(object obj)

@@ -6,7 +6,6 @@ public class MicrophoneStreamer
 {
     private string device;
     private AudioClip clip;
-
     private int lastPos = 0;
 
     public int sampleRate = 24000;
@@ -21,16 +20,14 @@ public class MicrophoneStreamer
             Permission.RequestUserPermission(Permission.Microphone);
 
             while (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
-            {
                 await System.Threading.Tasks.Task.Delay(100);
-            }
         }
 
         device = Microphone.devices.Length > 0 ? Microphone.devices[0] : null;
 
         if (device == null)
         {
-            Debug.LogError("No microphone found!");
+            Debug.LogError("[Mic] No microphone found!");
             return;
         }
 
@@ -39,27 +36,19 @@ public class MicrophoneStreamer
 
     public void Update()
     {
+        if (clip == null || device == null) return;
+
         int pos = Microphone.GetPosition(device);
         int diff = pos - lastPos;
 
+        if (diff < 0) diff += clip.samples;
         if (diff < chunkSize) return;
 
         float[] samples = new float[diff];
         clip.GetData(samples, lastPos);
-
         lastPos = pos;
 
-        float volume = 0f;
-        for (int i = 0; i < samples.Length; i++)
-            volume += Mathf.Abs(samples[i]);
-
-        volume /= samples.Length;
-
-        if (volume < 0.01f) return;
-
-        byte[] pcm = FloatToPCM16(samples);
-
-        OnChunkReady?.Invoke(pcm);
+        OnChunkReady?.Invoke(FloatToPCM16(samples));
     }
 
     byte[] FloatToPCM16(float[] samples)

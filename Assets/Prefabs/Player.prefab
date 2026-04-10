@@ -97,6 +97,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8231751603846551600}
   - component: {fileID: 5779927678946832776}
+  - component: {fileID: 3890574873411448697}
   m_Layer: 0
   m_Name: VRLingoManager
   m_TagString: Untagged
@@ -133,6 +134,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VRLingoClient
   playback: {fileID: 0}
   transcriptText: {fileID: 0}
+  micSensitivity: 0.02
+  statusText: {fileID: 0}
+--- !u!114 &3890574873411448697
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6918255972089132788}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 038cbb9c462914e2abd929951f72bcc9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MicSettingsUI
 --- !u!1 &8074852467598328063
 GameObject:
   m_ObjectHideFlags: 0
