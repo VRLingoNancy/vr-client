@@ -2,12 +2,14 @@ using UnityEngine;
 using System;
 using System.Threading.Tasks;
 using TMPro;
+using System.Collections.Concurrent;
 
 public class VRLingoClient : MonoBehaviour
 {
     private WebSocketClient ws;
     private MicrophoneStreamer mic;
     public AudioPlayback playback;
+    private ConcurrentQueue<Action> mainThreadActions = new();
 
     private bool isAiSpeaking = false;
     private string learningLanguage = "fr-FR";
@@ -16,11 +18,24 @@ public class VRLingoClient : MonoBehaviour
 
     async void Start()
     {
+        try
+        {
+            await Init();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("INIT CRASH: " + e);
+        }
+    }
+
+    async Task Init()
+    {
         ws = new WebSocketClient();
 
         ws.OnMessage += HandleMessage;
 
         string token = await AuthApi.Login();
+        Debug.Log("test");
 
         await ws.Connect(
             $"{AuthState.wsUrl}/api/realtime/session?lang={learningLanguage}",
@@ -44,36 +59,39 @@ public class VRLingoClient : MonoBehaviour
 
     void Update()
     {
-        mic?.Update();
+        ws?.Update();
     }
 
     void HandleMessage(WsMessage evt)
     {
-        if (evt.type == null) return;
-
-        if (evt.type == "response.audio.delta" && evt.delta != null)
+        mainThreadActions.Enqueue(() =>
         {
-            isAiSpeaking = true;
+            if (evt.type == null) return;
 
-            byte[] pcm = Convert.FromBase64String(evt.delta);
+            if (evt.type == "response.audio.delta" && evt.delta != null)
+            {
+                isAiSpeaking = true;
 
-            playback.PushPCM(pcm);
-        }
+                byte[] pcm = Convert.FromBase64String(evt.delta);
+                playback.PushPCM(pcm);
+            }
 
-        if (evt.type == "response.audio_transcript.delta" && evt.delta != null)
-        {
-            transcriptText.text += evt.delta;
-        }
+            if (evt.type == "response.audio_transcript.delta" && evt.delta != null)
+            {
+                transcriptText.text += evt.delta;
+            }
 
-        if (evt.type == "response.done")
-        {
-            isAiSpeaking = false;
-        }
+            if (evt.type == "response.done")
+            {
+                isAiSpeaking = false;
+                transcriptText.text += "\n";
+            }
 
-        if (evt.type == "input_audio_buffer.speech_started")
-        {
-            isAiSpeaking = false;
-            transcriptText.text += "\n\n";
-        }
+            if (evt.type == "input_audio_buffer.speech_started")
+            {
+                isAiSpeaking = false;
+                transcriptText.text = "";
+            }
+        });
     }
 }

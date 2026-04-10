@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 public class AudioPlayback : MonoBehaviour
 {
+    private readonly object lockObj = new object();
     private Queue<float> audioQueue = new Queue<float>();
     public AudioSource source;
 
@@ -13,18 +14,21 @@ public class AudioPlayback : MonoBehaviour
     {
         float[] samples = PCM16ToFloat(pcm);
 
-        foreach (var s in samples)
-            audioQueue.Enqueue(s);
+        lock (lockObj)
+        {
+            foreach (var s in samples)
+                audioQueue.Enqueue(s);
+        }
     }
 
     void OnAudioFilterRead(float[] data, int channels)
     {
-        for (int i = 0; i < data.Length; i++)
+        lock (lockObj)
         {
-            if (audioQueue.Count > 0)
-                data[i] = audioQueue.Dequeue();
-            else
-                data[i] = 0;
+            for (int i = 0; i < data.Length; i++)
+            {
+                data[i] = audioQueue.Count > 0 ? audioQueue.Dequeue() : 0;
+            }
         }
     }
 

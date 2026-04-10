@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Android;
 using System;
 
 public class MicrophoneStreamer
@@ -13,9 +14,26 @@ public class MicrophoneStreamer
 
     public Action<byte[]> OnChunkReady;
 
-    public void Start()
+    public async void Start()
     {
-        device = Microphone.devices[0];
+        if (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
+        {
+            Permission.RequestUserPermission(Permission.Microphone);
+
+            while (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
+            {
+                await System.Threading.Tasks.Task.Delay(100);
+            }
+        }
+
+        device = Microphone.devices.Length > 0 ? Microphone.devices[0] : null;
+
+        if (device == null)
+        {
+            Debug.LogError("No microphone found!");
+            return;
+        }
+
         clip = Microphone.Start(device, true, 1, sampleRate);
     }
 
@@ -31,14 +49,13 @@ public class MicrophoneStreamer
 
         lastPos = pos;
 
-        // 🔥 VAD SIMPLE (détection silence)
         float volume = 0f;
         for (int i = 0; i < samples.Length; i++)
             volume += Mathf.Abs(samples[i]);
 
         volume /= samples.Length;
 
-        if (volume < 0.01f) return; // silence → skip
+        if (volume < 0.01f) return;
 
         byte[] pcm = FloatToPCM16(samples);
 
