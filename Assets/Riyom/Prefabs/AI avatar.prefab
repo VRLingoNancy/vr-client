@@ -26,7 +26,7 @@ Transform:
   m_GameObject: {fileID: 388860448886974430}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 1.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -331,9 +331,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 3844276732351613436}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 96b1046fb04489149a6b7bffbf03b102, type: 3}
+  m_Script: {fileID: 11500000, guid: 10ebc39792cbb8945a78aa5c2b47afac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VRLingoClient
+  source: {fileID: 3375017654895238975}
+  sampleRate: 24000
 --- !u!1 &5086774448430199994
 GameObject:
   m_ObjectHideFlags: 0
@@ -437,6 +439,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0

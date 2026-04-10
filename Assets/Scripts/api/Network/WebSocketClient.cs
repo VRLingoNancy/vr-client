@@ -1,0 +1,64 @@
+using NativeWebSocket;
+using UnityEngine;
+using System;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+
+public class WebSocketClient
+{
+    private WebSocket ws;
+
+    public Action<WsMessage> OnMessage;
+
+    public async Task Connect(string url, string token)
+    {
+        ws = new WebSocket(url);
+
+        ws.OnOpen += () =>
+        {
+            Debug.Log("✅ WS connecté");
+        };
+
+        ws.OnMessage += (bytes) =>
+        {
+            var msg = System.Text.Encoding.UTF8.GetString(bytes);
+
+            try
+            {
+                var evt = JsonConvert.DeserializeObject<WsMessage>(msg);
+                OnMessage?.Invoke(evt);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("WS parse error: " + e + "\nRAW: " + msg);
+            }
+        };
+
+        ws.OnError += (err) =>
+        {
+            Debug.LogError("WS Error: " + err);
+        };
+
+        ws.OnClose += (code) =>
+        {
+            Debug.Log("WS Closed");
+        };
+
+        await ws.Connect();
+    }
+
+    public async Task Send(object obj)
+    {
+        if (ws.State != WebSocketState.Open) return;
+
+        string json = JsonConvert.SerializeObject(obj);
+        await ws.SendText(json);
+    }
+
+    public void Update()
+    {
+#if !UNITY_WEBGL || UNITY_EDITOR
+        ws?.DispatchMessageQueue();
+#endif
+    }
+}
