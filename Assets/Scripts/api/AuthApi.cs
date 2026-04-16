@@ -8,6 +8,8 @@ public static class AuthApi
     public static async Task<string?> Login()
     {
         HttpClient client = new HttpClient();
+        string url = $"{AuthState.httpUrl}/auth/login";
+        Debug.Log($"AuthApi: POST {url}");
 
         var body = new LoginRequest
         {
@@ -19,15 +21,18 @@ public static class AuthApi
 
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var response = await client.PostAsync($"{AuthState.httpUrl}/auth/login", content);
+        var response = await client.PostAsync(url, content);
 
         if (!response.IsSuccessStatusCode)
         {
-            Debug.LogError(await response.Content.ReadAsStringAsync());
+            Debug.LogError(
+                $"AuthApi: login failed ({(int)response.StatusCode}) -> {await response.Content.ReadAsStringAsync()}"
+            );
             return null;
         }
 
         string responseText = await response.Content.ReadAsStringAsync();
+        Debug.Log($"AuthApi: login OK ({responseText.Length} chars)");
 
         LoginResponse res = JsonUtility.FromJson<LoginResponse>(responseText);
 

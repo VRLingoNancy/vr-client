@@ -9,6 +9,11 @@ public class VRLingoClient : MonoBehaviour
 {
     private static VRLingoClient instance;
 
+    [Header("Backend")]
+    [SerializeField] private string backendApiUri = "127.0.0.1:3000";
+    [SerializeField] private bool verboseLogs = true;
+    [SerializeField] private string targetSceneName = "TestScene";
+
     private WebSocketClient ws;
     private MicrophoneStreamer mic;
     public AudioPlayback playback;
@@ -34,8 +39,9 @@ public class VRLingoClient : MonoBehaviour
         transform.SetParent(null);
         DontDestroyOnLoad(gameObject);
         SceneManager.sceneLoaded += OnSceneLoaded;
+        ApplyBackendConfiguration();
 
-        if (SceneManager.GetActiveScene().name == "TestScene")
+        if (SceneManager.GetActiveScene().name == targetSceneName)
             await TryInit();
     }
 
@@ -53,18 +59,25 @@ public class VRLingoClient : MonoBehaviour
 
     async Task Init()
     {
+        ApplyBackendConfiguration();
         SetStatus("Connecting...");
+        Log($"Init started. HTTP={AuthState.httpUrl}, WS={AuthState.wsUrl}, scene={SceneManager.GetActiveScene().name}");
 
         ws = new WebSocketClient();
         ws.OnMessage += HandleMessage;
 
         string token = await AuthApi.Login();
+        if (string.IsNullOrWhiteSpace(token))
+            throw new InvalidOperationException($"Login failed against {AuthState.httpUrl}/auth/login");
+
+        Log("Login OK. JWT received.");
         SetStatus("Logged in, opening WS...");
 
         await ws.Connect(
             $"{AuthState.wsUrl}/api/realtime/session?lang={learningLanguage}",
             token
         );
+        Log("WebSocket connected.");
         SetStatus("Connected! Waiting for mic...");
 
         mic = new MicrophoneStreamer();
@@ -76,6 +89,7 @@ public class VRLingoClient : MonoBehaviour
         {
             if (isAiSpeaking || isWaitingForResponse) return;
 
+            Log($"Mic chunk ready: {pcm.Length} bytes");
             await ws.Send(new
             {
                 type = "input_audio_buffer.append",
@@ -106,8 +120,9 @@ public class VRLingoClient : MonoBehaviour
     {
         transcriptText = null;
         playback = null;
+        Log($"Scene loaded: {scene.name}");
 
-        if (scene.name == "TestScene")
+        if (scene.name == targetSceneName)
             await TryInit();
     }
 
@@ -131,6 +146,7 @@ public class VRLingoClient : MonoBehaviour
         mainThreadActions.Enqueue(() =>
         {
             if (evt.type == null) return;
+            Log($"WS event: {evt.type}");
 
             if (evt.type == "response.audio.delta" && evt.delta != null)
             {
@@ -173,5 +189,20 @@ public class VRLingoClient : MonoBehaviour
                 SetStatus("Listening...");
             }
         });
+    }
+
+    void ApplyBackendConfiguration()
+    {
+        AuthState.SetApiUri(backendApiUri);
+        Log($"Using backend endpoint: {AuthState.apiUri}");
+
+        if (Application.platform == RuntimePlatform.Android && backendApiUri.StartsWith("127.0.0.1"))
+            Debug.LogWarning("VRLingoClient: backendApiUri is 127.0.0.1 on Android/Quest. Replace it with the PC LAN IP, e.g. 192.168.x.x:3000.");
+    }
+
+    void Log(string message)
+    {
+        if (!verboseLogs) return;
+        Debug.Log($"VRLingoClient: {message}");
     }
 }

@@ -12,13 +12,19 @@ public class WebSocketClient
 
     public async Task Connect(string url, string token)
     {
-        var separator = url.Contains("?") ? "&" : "?";
-        var urlWithToken = $"{url}{separator}token={token}";
-        ws = new WebSocket(urlWithToken);
+        if (string.IsNullOrWhiteSpace(token))
+            throw new InvalidOperationException("Missing JWT token for WebSocket connection.");
+
+        var headers = new System.Collections.Generic.Dictionary<string, string>
+        {
+            { "Authorization", $"Bearer {token}" }
+        };
+
+        ws = new WebSocket(url, headers);
 
         ws.OnOpen += () =>
         {
-            Debug.Log("✅ WS connecté");
+            Debug.Log($"WS Connected -> {url}");
         };
 
         ws.OnMessage += (bytes) =>
@@ -43,7 +49,7 @@ public class WebSocketClient
 
         ws.OnClose += (code) =>
         {
-            Debug.Log("WS Closed");
+            Debug.Log("WS Closed: " + code);
         };
 
         _ = ws.Connect();
