@@ -58,12 +58,15 @@ public class VRLingoClient : MonoBehaviour
         ws = new WebSocketClient();
         ws.OnMessage += HandleMessage;
 
-        string token = await AuthApi.Login();
+        if (string.IsNullOrEmpty(AuthState.AccessToken))
+        {
+            AuthState.AccessToken = await AuthApi.Login();
+        }
         SetStatus("Logged in, opening WS...");
 
         await ws.Connect(
             $"{AuthState.wsUrl}/api/realtime/session?lang={learningLanguage}",
-            token
+            AuthState.AccessToken
         );
         SetStatus("Connected! Waiting for mic...");
 
