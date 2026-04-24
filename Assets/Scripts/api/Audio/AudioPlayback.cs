@@ -15,6 +15,15 @@ public class AudioPlayback : MonoBehaviour
 
     public bool IsPlaying => source != null && source.isPlaying;
 
+    // Per-response playback progress. Reset via BeginSession at start of a new AI response.
+    public int SessionSamplesReceived { get; private set; }
+    public int SessionSamplesPlayed => (source != null && source.clip != null) ? source.timeSamples : 0;
+
+    public void BeginSession()
+    {
+        SessionSamplesReceived = 0;
+    }
+
     void Start()
     {
         source = GetComponent<AudioSource>();
@@ -34,6 +43,7 @@ public class AudioPlayback : MonoBehaviour
         {
             buffer.AddRange(samples);
         }
+        SessionSamplesReceived += samples.Length;
 
         if (!isPlaying)
             TryPlay();

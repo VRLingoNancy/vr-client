@@ -26,16 +26,36 @@ public class VRLingoClient : MonoBehaviour
     public AudioPlayback playback;
     private ConcurrentQueue<Action> mainThreadActions = new();
 
-    private bool isAiSpeaking = false;
     private bool isWaitingForResponse = false;
     private bool isConnected = false;
+    private bool responseCompletedPendingDrain = false;
+    public static bool IsUserSpeaking { get; private set; }
+    public static bool IsAiSpeaking { get; private set; }
 
     public TMP_Text transcriptText;
     private ScrollRect transcriptScroll;
     private float userScrollCooldown = 0f;
     private string currentStatus = "";
     private readonly List<string> history = new();
-    private string liveAi = "";
+    private string liveAiFull = "";        // full transcript received
+    private int liveAiRevealedCount = 0;   // number of chars currently revealed
+    private float liveAiNextRevealTime = 0f;
+
+    // Pacing (COMMA/END pauses are universal; per-syllable time varies by language)
+    const float COMMA_PAUSE_SEC = 0.12f;
+    const float END_PAUSE_SEC = 0.30f;
+
+    static float SyllableSec()
+    {
+        switch (AuthState.learningLanguage)
+        {
+            case "it": return 0.13f;  // ~7.7 syl/s
+            case "de": return 0.18f;  // ~5.6 syl/s
+            case "en": return 0.15f;  // ~6.7 syl/s
+            case "fr":
+            default:   return 0.16f;  // ~6.2 syl/s
+        }
+    }
 
     const string COLOR_USER = "#7EC8E3";
     const string COLOR_AI = "#F5F5F5";
@@ -79,8 +99,8 @@ public class VRLingoClient : MonoBehaviour
 
         var sb = new StringBuilder();
         foreach (var line in history) sb.AppendLine(line);
-        if (!string.IsNullOrEmpty(liveAi))
-            sb.AppendLine($"<color={COLOR_AI}><b>AI:</b></color> {liveAi}");
+        if (liveAiRevealedCount > 0)
+            sb.AppendLine($"<color={COLOR_AI}><b>AI:</b></color> {liveAiFull.Substring(0, liveAiRevealedCount)}");
         sb.Append($"\n<color={COLOR_STATUS}><i>{currentStatus}</i></color>");
 
         transcriptText.text = sb.ToString();
@@ -133,7 +153,7 @@ public class VRLingoClient : MonoBehaviour
 
         mic.OnChunkReady += async (pcm) =>
         {
-            if (isAiSpeaking || isWaitingForResponse) return;
+            if (IsAiSpeaking || isWaitingForResponse) return;
             if (playback != null && playback.IsPlaying) return;
 
             await ws.Send(new
@@ -155,6 +175,21 @@ public class VRLingoClient : MonoBehaviour
 
         if (playback == null)
             playback = FindAnyObjectByType<AudioPlayback>();
+
+        if (responseCompletedPendingDrain && (playback == null || !playback.IsPlaying))
+        {
+            responseCompletedPendingDrain = false;
+            IsAiSpeaking = false;
+            if (!string.IsNullOrEmpty(liveAiFull))
+            {
+                AddHistory("AI", COLOR_AI, liveAiFull);
+                liveAiFull = "";
+                liveAiRevealedCount = 0;
+            }
+            SetStatus("Ready — speak!");
+        }
+
+        AdvanceTranscriptReveal();
         if (transcriptText == null || transcriptScroll == null)
         {
             var go = GameObject.Find("Canvas AI");
@@ -218,6 +253,50 @@ public class VRLingoClient : MonoBehaviour
         return value;
     }
 
+    void AdvanceTranscriptReveal()
+    {
+        if (liveAiRevealedCount >= liveAiFull.Length) return;
+        if (Time.time < liveAiNextRevealTime) return;
+
+        // Reveal next "chunk": a word (until next whitespace) or a lone punctuation.
+        int start = liveAiRevealedCount;
+        int i = start;
+        // Skip leading whitespace
+        while (i < liveAiFull.Length && char.IsWhiteSpace(liveAiFull[i])) i++;
+        // Consume one word OR one punctuation char
+        if (i < liveAiFull.Length && IsPunct(liveAiFull[i])) i++;
+        else while (i < liveAiFull.Length && !char.IsWhiteSpace(liveAiFull[i]) && !IsPunct(liveAiFull[i])) i++;
+
+        liveAiRevealedCount = i;
+
+        string revealed = liveAiFull.Substring(start, i - start);
+        float wait = SyllableCount(revealed) * SyllableSec();
+        foreach (char c in revealed)
+        {
+            if (c == ',' || c == ';' || c == ':') wait += COMMA_PAUSE_SEC;
+            else if (c == '.' || c == '!' || c == '?' || c == '…') wait += END_PAUSE_SEC;
+        }
+        liveAiNextRevealTime = Time.time + wait;
+        UpdateDisplay();
+    }
+
+    static bool IsPunct(char c) =>
+        c == ',' || c == ';' || c == ':' || c == '.' || c == '!' || c == '?' || c == '…';
+
+    static int SyllableCount(string s)
+    {
+        int count = 0;
+        bool prevVowel = false;
+        foreach (char raw in s)
+        {
+            char c = char.ToLowerInvariant(raw);
+            bool vowel = "aeiouyàâäéèêëîïôöùûüœæáíóúãõ".IndexOf(c) >= 0;
+            if (vowel && !prevVowel) count++;
+            prevVowel = vowel;
+        }
+        return Mathf.Max(1, count);
+    }
+
     static void DumpHierarchy(Transform t, int depth)
     {
         var comps = t.GetComponents<Component>();
@@ -266,8 +345,13 @@ public class VRLingoClient : MonoBehaviour
 
             if (evt.type == "response.audio.delta" && evt.delta != null)
             {
-                if (!isAiSpeaking) SetStatus("AI speaking...");
-                isAiSpeaking = true;
+                if (!IsAiSpeaking)
+                {
+                    if (playback != null) playback.BeginSession();
+                    SetStatus("AI speaking...");
+                }
+                IsAiSpeaking = true;
+                IsUserSpeaking = false;
 
                 byte[] pcm = Convert.FromBase64String(evt.delta);
                 if (playback != null)
@@ -276,13 +360,13 @@ public class VRLingoClient : MonoBehaviour
 
             if (evt.type == "response.audio_transcript.delta" && evt.delta != null)
             {
-                liveAi += evt.delta;
-                UpdateDisplay();
+                liveAiFull += evt.delta;
             }
 
             if (evt.type == "input_audio_buffer.speech_stopped")
             {
                 isWaitingForResponse = true;
+                IsUserSpeaking = false;
                 SetStatus("Processing...");
             }
 
@@ -293,21 +377,19 @@ public class VRLingoClient : MonoBehaviour
 
                 if (!string.IsNullOrEmpty(evt.userTranscript))
                     AddHistory("You", COLOR_USER, evt.userTranscript);
-                if (!string.IsNullOrEmpty(liveAi))
-                {
-                    AddHistory("AI", COLOR_AI, liveAi);
-                    liveAi = "";
-                }
 
-                isAiSpeaking = false;
                 isWaitingForResponse = false;
-                SetStatus("Ready — speak!");
+                responseCompletedPendingDrain = true;
             }
 
             if (evt.type == "input_audio_buffer.speech_started")
             {
-                isAiSpeaking = false;
+                IsAiSpeaking = false;
                 isWaitingForResponse = false;
+                IsUserSpeaking = true;
+                // Discard any leftover partial AI text if user interrupts.
+                liveAiFull = "";
+                liveAiRevealedCount = 0;
                 SetStatus("Listening...");
             }
         });
