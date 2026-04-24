@@ -13,6 +13,8 @@ public class AudioPlayback : MonoBehaviour
     private bool isPlaying = false;
     private int playbackPosition = 0;
 
+    public bool IsPlaying => source != null && source.isPlaying;
+
     void Start()
     {
         source = GetComponent<AudioSource>();

@@ -10,11 +10,11 @@ public class WebSocketClient
 
     public Action<WsMessage> OnMessage;
 
-    public async Task Connect(string url, string token)
+    public async Task Connect(string url, string ticket)
     {
         var separator = url.Contains("?") ? "&" : "?";
-        var urlWithToken = $"{url}{separator}token={token}";
-        ws = new WebSocket(urlWithToken);
+        var urlWithTicket = $"{url}{separator}ticket={ticket}";
+        ws = new WebSocket(urlWithTicket);
 
         ws.OnOpen += () =>
         {

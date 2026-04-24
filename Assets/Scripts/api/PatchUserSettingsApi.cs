@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using System.Text;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -9,16 +10,40 @@ using System.Collections.Generic;
 public class PatchUserSettingsApi: MonoBehaviour
 {
     public TMP_Dropdown PreferredLangageDropdown;
+    public Button sceneTestButton;
 
     private List<string> languageKeys = new List<string>
     {
-        "FR_fr",
-        "EN_en"
+        "fr",
+        "en",
+        "it",
+        "de"
     };
 
-    void Start()
+    async void Start()
     {
         PreferredLangageDropdown.onValueChanged.AddListener(UpdatePrefeeredLangage);
+
+        if (sceneTestButton != null)
+            sceneTestButton.interactable = false;
+
+        try
+        {
+            var settings = await getSettings();
+            if (settings == null || string.IsNullOrEmpty(settings.preferredStudyLanguage))
+                return;
+
+            int index = languageKeys.IndexOf(settings.preferredStudyLanguage);
+            if (index < 0) return;
+
+            AuthState.learningLanguage = settings.preferredStudyLanguage;
+            PreferredLangageDropdown.SetValueWithoutNotify(index);
+        }
+        finally
+        {
+            if (sceneTestButton != null)
+                sceneTestButton.interactable = true;
+        }
     }
 
     public async Task<SettingsPatchResponse?> getSettings()
@@ -83,6 +108,7 @@ public class PatchUserSettingsApi: MonoBehaviour
     public async void UpdatePrefeeredLangage(int index)
     {
         string value = languageKeys[index];
+        AuthState.learningLanguage = value;
         var body = new SettingsPatchRequest
         {
             preferredStudyLanguage = value

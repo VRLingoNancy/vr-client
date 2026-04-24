@@ -10,6 +10,7 @@ public class MicrophoneStreamer
 
     public int sampleRate = 24000;
     public int chunkSize = 2048;
+    public float noiseThreshold = 0.02f; // RMS gate; chunks below are silenced. 0 = disabled.
 
     public Action<byte[]> OnChunkReady;
 
@@ -48,7 +49,18 @@ public class MicrophoneStreamer
         clip.GetData(samples, lastPos);
         lastPos = pos;
 
+        if (noiseThreshold > 0f && Rms(samples) < noiseThreshold)
+            Array.Clear(samples, 0, samples.Length);
+
         OnChunkReady?.Invoke(FloatToPCM16(samples));
+    }
+
+    static float Rms(float[] samples)
+    {
+        double sum = 0;
+        for (int i = 0; i < samples.Length; i++)
+            sum += samples[i] * samples[i];
+        return (float)Math.Sqrt(sum / samples.Length);
     }
 
     byte[] FloatToPCM16(float[] samples)
