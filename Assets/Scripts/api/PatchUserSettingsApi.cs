@@ -10,6 +10,7 @@ using System.Collections.Generic;
 public class PatchUserSettingsApi: MonoBehaviour
 {
     public TMP_Dropdown PreferredLangageDropdown;
+    public TMP_Dropdown AiContextDropdown;
     public Button sceneTestButton;
 
     private List<string> languageKeys = new List<string>
@@ -20,9 +21,15 @@ public class PatchUserSettingsApi: MonoBehaviour
         "de"
     };
 
+    private List<string> contexts = new List<string>
+    {
+        "medieval"
+    };
+
     async void Start()
     {
         PreferredLangageDropdown.onValueChanged.AddListener(UpdatePrefeeredLangage);
+        AiContextDropdown.onValueChanged.AddListener(UpdateAiContext);
 
         if (sceneTestButton != null)
             sceneTestButton.interactable = false;
@@ -115,5 +122,11 @@ public class PatchUserSettingsApi: MonoBehaviour
         };
 
         await TweakSetting(body);
+    }
+
+    public async void UpdateAiContext(int index)
+    {
+        string value = contexts[index];
+        AuthState.aiContext = value;
     }
 }

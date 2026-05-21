@@ -140,7 +140,7 @@ public class VRLingoClient : MonoBehaviour
         SetStatus("Opening WS...");
 
         await ws.Connect(
-            $"{AuthState.wsUrl}/api/realtime/session?lang={AuthState.learningLanguage}",
+            $"{AuthState.wsUrl}/api/realtime/session?lang={AuthState.learningLanguage}&context={AuthState.aiContext}",
             ticket
         );
         SetStatus("Connected! Waiting for mic...");

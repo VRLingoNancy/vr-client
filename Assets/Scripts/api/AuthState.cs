@@ -2,6 +2,7 @@ public static class AuthState
 {
     public static string AccessToken = "";
     public static string learningLanguage = "fr"; // one of: fr, en, it, de
+    public static string aiContext = "medieval";
     public static float micNoiseGate = 0.05f;     // RMS threshold; 0 = no gate
     public static string ip = "10.18.207.11"; // Update with local ip (ipconfig / ifconfig)
     public static readonly string port = "3000";
