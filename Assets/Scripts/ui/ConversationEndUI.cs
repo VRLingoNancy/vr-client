@@ -19,8 +19,8 @@ public class ConversationEndUI : MonoBehaviour
     {
         if (string.IsNullOrEmpty(VRLingoClient.CurrentConversationId)) return;
 
-        if (endButton != null && !endButton.gameObject.activeSelf)
-            endButton.gameObject.SetActive(true);
+        // Bouton "Terminer la session" masqué : on ne le ré-affiche plus
+        // quand une conversation démarre.
 
         if (!locked && settingsToLock != null)
         {
