@@ -343,7 +343,8 @@ public class VRLingoClient : MonoBehaviour
         {
             if (evt.type == null) return;
 
-            if (evt.type == "response.audio.delta" && evt.delta != null)
+            // GA: "response.output_audio.delta" ; ancien beta: "response.audio.delta"
+            if ((evt.type == "response.output_audio.delta" || evt.type == "response.audio.delta") && evt.delta != null)
             {
                 if (!IsAiSpeaking)
                 {
@@ -358,7 +359,8 @@ public class VRLingoClient : MonoBehaviour
                     playback.PushPCM(pcm);
             }
 
-            if (evt.type == "response.audio_transcript.delta" && evt.delta != null)
+            // GA: "response.output_audio_transcript.delta" ; ancien beta: "response.audio_transcript.delta"
+            if ((evt.type == "response.output_audio_transcript.delta" || evt.type == "response.audio_transcript.delta") && evt.delta != null)
             {
                 liveAiFull += evt.delta;
             }
