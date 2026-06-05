@@ -23,13 +23,23 @@ public class PatchUserSettingsApi: MonoBehaviour
 
     private List<string> contexts = new List<string>
     {
-        "medieval"
+        "medieval",
+        "classic"
     };
 
     async void Start()
     {
         PreferredLangageDropdown.onValueChanged.AddListener(UpdatePrefeeredLangage);
         AiContextDropdown.onValueChanged.AddListener(UpdateAiContext);
+
+        // Remplit le dropdown des thèmes depuis la liste (label == valeur) et
+        // sélectionne le thème courant, pour que l'UI corresponde toujours aux
+        // contextes acceptés par le backend.
+        AiContextDropdown.ClearOptions();
+        AiContextDropdown.AddOptions(contexts);
+        int ctxIndex = contexts.IndexOf(AuthState.aiContext);
+        if (ctxIndex >= 0)
+            AiContextDropdown.SetValueWithoutNotify(ctxIndex);
 
         if (sceneTestButton != null)
             sceneTestButton.interactable = false;
